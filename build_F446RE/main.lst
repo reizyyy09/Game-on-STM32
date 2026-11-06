@@ -1,0 +1,1022 @@
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 1
+
+
+   1              		.cpu cortex-m4
+   2              		.arch armv7e-m
+   3              		.fpu fpv4-sp-d16
+   4              		.eabi_attribute 27, 1
+   5              		.eabi_attribute 28, 1
+   6              		.eabi_attribute 20, 1
+   7              		.eabi_attribute 21, 1
+   8              		.eabi_attribute 23, 3
+   9              		.eabi_attribute 24, 1
+  10              		.eabi_attribute 25, 1
+  11              		.eabi_attribute 26, 1
+  12              		.eabi_attribute 30, 1
+  13              		.eabi_attribute 34, 1
+  14              		.eabi_attribute 18, 4
+  15              		.file	"main.c"
+  16              		.text
+  17              	.Ltext0:
+  18              		.cfi_sections	.debug_frame
+  19              		.file 1 "Core/Src/main.c"
+  20              		.section	.text.clk_delay,"ax",%progbits
+  21              		.align	1
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	clk_delay:
+  27              	.LFB130:
+   1:Core/Src/main.c **** #include <stdint.h>
+   2:Core/Src/main.c **** 
+   3:Core/Src/main.c **** #if defined(STM32F429xx)
+   4:Core/Src/main.c **** #include "stm32f429xx.h"
+   5:Core/Src/main.c **** #elif defined(STM32F446xx)
+   6:Core/Src/main.c **** #include "stm32f446xx.h"
+   7:Core/Src/main.c **** #endif
+   8:Core/Src/main.c **** 
+   9:Core/Src/main.c **** extern uint32_t SystemCoreClock;
+  10:Core/Src/main.c **** 
+  11:Core/Src/main.c **** #define PERM  1
+  12:Core/Src/main.c **** 
+  13:Core/Src/main.c **** #if PERM == 0
+  14:Core/Src/main.c ****   #define PIN_R 15
+  15:Core/Src/main.c ****   #define PIN_CLK 13
+  16:Core/Src/main.c ****   #define PIN_LAT 5
+  17:Core/Src/main.c **** #elif PERM == 1
+  18:Core/Src/main.c ****   #define PIN_R 15
+  19:Core/Src/main.c ****   #define PIN_CLK 5
+  20:Core/Src/main.c ****   #define PIN_LAT 13
+  21:Core/Src/main.c **** #elif PERM == 2
+  22:Core/Src/main.c ****   #define PIN_R 13
+  23:Core/Src/main.c ****   #define PIN_CLK 15
+  24:Core/Src/main.c ****   #define PIN_LAT 5
+  25:Core/Src/main.c **** #elif PERM == 3
+  26:Core/Src/main.c ****   #define PIN_R 13
+  27:Core/Src/main.c ****   #define PIN_CLK 5
+  28:Core/Src/main.c ****   #define PIN_LAT 15
+  29:Core/Src/main.c **** #elif PERM == 4
+  30:Core/Src/main.c ****   #define PIN_R 5
+  31:Core/Src/main.c ****   #define PIN_CLK 15
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 2
+
+
+  32:Core/Src/main.c ****   #define PIN_LAT 13
+  33:Core/Src/main.c **** #else
+  34:Core/Src/main.c ****   #define PIN_R 5
+  35:Core/Src/main.c ****   #define PIN_CLK 13
+  36:Core/Src/main.c ****   #define PIN_LAT 15
+  37:Core/Src/main.c **** #endif
+  38:Core/Src/main.c **** 
+  39:Core/Src/main.c **** #define PIN_OE    1    // PB1  -> nOE
+  40:Core/Src/main.c **** #define PIN_A     2    // PB2  -> A
+  41:Core/Src/main.c **** #define PIN_B     4    // PB4  -> B
+  42:Core/Src/main.c **** 
+  43:Core/Src/main.c **** #define PIN_HIGH(pin) (GPIOB->BSRR = (1U << (pin)))
+  44:Core/Src/main.c **** #define PIN_LOW(pin)  (GPIOB->BSRR = (1U << ((pin) + 16)))
+  45:Core/Src/main.c **** 
+  46:Core/Src/main.c **** #define OE_ON()   PIN_HIGH(PIN_OE)
+  47:Core/Src/main.c **** #define OE_OFF()  PIN_LOW(PIN_OE)
+  48:Core/Src/main.c **** 
+  49:Core/Src/main.c **** #define BRIGHTNESS_ON   100
+  50:Core/Src/main.c **** #define BRIGHTNESS_OFF  100
+  51:Core/Src/main.c **** 
+  52:Core/Src/main.c **** #define PIX_OFF 0xFF
+  53:Core/Src/main.c **** #define PIX_ON  0x00
+  54:Core/Src/main.c **** 
+  55:Core/Src/main.c **** #define SCREEN_W 32
+  56:Core/Src/main.c **** #define SCREEN_H 16
+  57:Core/Src/main.c **** 
+  58:Core/Src/main.c **** uint8_t frame_buffer[4][16];
+  59:Core/Src/main.c **** 
+  60:Core/Src/main.c **** static void clk_delay(void) {
+  28              		.loc 1 60 29 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 8
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              		@ link register save eliminated.
+  33 0000 82B0     		sub	sp, sp, #8
+  34              	.LCFI0:
+  35              		.cfi_def_cfa_offset 8
+  61:Core/Src/main.c ****     for (volatile int i = 0; i < 5; i++) {
+  36              		.loc 1 61 5 view .LVU1
+  37              	.LBB2:
+  38              		.loc 1 61 10 view .LVU2
+  39              		.loc 1 61 23 is_stmt 0 view .LVU3
+  40 0002 0023     		movs	r3, #0
+  41 0004 0193     		str	r3, [sp, #4]
+  42              		.loc 1 61 5 view .LVU4
+  43 0006 03E0     		b	.L2
+  44              	.L3:
+  62:Core/Src/main.c ****         __NOP();
+  45              		.loc 1 62 9 is_stmt 1 view .LVU5
+  46              		.syntax unified
+  47              	@ 62 "Core/Src/main.c" 1
+  48 0008 00BF     		nop
+  49              	@ 0 "" 2
+  61:Core/Src/main.c ****     for (volatile int i = 0; i < 5; i++) {
+  50              		.loc 1 61 38 discriminator 3 view .LVU6
+  51              		.thumb
+  52              		.syntax unified
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 3
+
+
+  53 000a 019B     		ldr	r3, [sp, #4]
+  54 000c 0133     		adds	r3, r3, #1
+  55 000e 0193     		str	r3, [sp, #4]
+  56              	.L2:
+  61:Core/Src/main.c ****     for (volatile int i = 0; i < 5; i++) {
+  57              		.loc 1 61 32 discriminator 1 view .LVU7
+  58 0010 019B     		ldr	r3, [sp, #4]
+  59 0012 042B     		cmp	r3, #4
+  60 0014 F8DD     		ble	.L3
+  61              	.LBE2:
+  63:Core/Src/main.c ****     }
+  64:Core/Src/main.c **** }
+  62              		.loc 1 64 1 is_stmt 0 view .LVU8
+  63 0016 02B0     		add	sp, sp, #8
+  64              	.LCFI1:
+  65              		.cfi_def_cfa_offset 0
+  66              		@ sp needed
+  67 0018 7047     		bx	lr
+  68              		.cfi_endproc
+  69              	.LFE130:
+  71              		.section	.text.delay_us,"ax",%progbits
+  72              		.align	1
+  73              		.syntax unified
+  74              		.thumb
+  75              		.thumb_func
+  77              	delay_us:
+  78              	.LVL0:
+  79              	.LFB131:
+  65:Core/Src/main.c **** 
+  66:Core/Src/main.c **** static void delay_us(volatile uint32_t t) {
+  80              		.loc 1 66 43 is_stmt 1 view -0
+  81              		.cfi_startproc
+  82              		@ args = 0, pretend = 0, frame = 8
+  83              		@ frame_needed = 0, uses_anonymous_args = 0
+  84              		@ link register save eliminated.
+  85              		.loc 1 66 43 is_stmt 0 view .LVU10
+  86 0000 82B0     		sub	sp, sp, #8
+  87              	.LCFI2:
+  88              		.cfi_def_cfa_offset 8
+  89 0002 0190     		str	r0, [sp, #4]
+  67:Core/Src/main.c ****     while (t--) {
+  90              		.loc 1 67 5 is_stmt 1 view .LVU11
+  91              		.loc 1 67 11 is_stmt 0 view .LVU12
+  92 0004 00E0     		b	.L6
+  93              	.L7:
+  68:Core/Src/main.c ****         __NOP();
+  94              		.loc 1 68 9 is_stmt 1 view .LVU13
+  95              		.syntax unified
+  96              	@ 68 "Core/Src/main.c" 1
+  97 0006 00BF     		nop
+  98              	@ 0 "" 2
+  99              		.thumb
+ 100              		.syntax unified
+ 101              	.L6:
+  67:Core/Src/main.c ****     while (t--) {
+ 102              		.loc 1 67 12 view .LVU14
+  67:Core/Src/main.c ****     while (t--) {
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 4
+
+
+ 103              		.loc 1 67 13 is_stmt 0 view .LVU15
+ 104 0008 019B     		ldr	r3, [sp, #4]
+ 105 000a 5A1E     		subs	r2, r3, #1
+ 106 000c 0192     		str	r2, [sp, #4]
+  67:Core/Src/main.c ****     while (t--) {
+ 107              		.loc 1 67 12 view .LVU16
+ 108 000e 002B     		cmp	r3, #0
+ 109 0010 F9D1     		bne	.L7
+  69:Core/Src/main.c ****     }
+  70:Core/Src/main.c **** }
+ 110              		.loc 1 70 1 view .LVU17
+ 111 0012 02B0     		add	sp, sp, #8
+ 112              	.LCFI3:
+ 113              		.cfi_def_cfa_offset 0
+ 114              		@ sp needed
+ 115 0014 7047     		bx	lr
+ 116              		.cfi_endproc
+ 117              	.LFE131:
+ 119              		.section	.text.p10_gpio_init,"ax",%progbits
+ 120              		.align	1
+ 121              		.syntax unified
+ 122              		.thumb
+ 123              		.thumb_func
+ 125              	p10_gpio_init:
+ 126              	.LFB132:
+  71:Core/Src/main.c **** 
+  72:Core/Src/main.c **** static void p10_gpio_init(void) {
+ 127              		.loc 1 72 33 is_stmt 1 view -0
+ 128              		.cfi_startproc
+ 129              		@ args = 0, pretend = 0, frame = 0
+ 130              		@ frame_needed = 0, uses_anonymous_args = 0
+ 131              		@ link register save eliminated.
+  73:Core/Src/main.c ****     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
+ 132              		.loc 1 73 5 view .LVU19
+ 133              		.loc 1 73 8 is_stmt 0 view .LVU20
+ 134 0000 0E4A     		ldr	r2, .L10
+ 135 0002 136B     		ldr	r3, [r2, #48]
+ 136              		.loc 1 73 18 view .LVU21
+ 137 0004 43F00203 		orr	r3, r3, #2
+ 138 0008 1363     		str	r3, [r2, #48]
+  74:Core/Src/main.c **** 
+  75:Core/Src/main.c ****     uint32_t pins_mask = (3U << (1*2))  | (3U << (2*2))  | (3U << (4*2)) |
+ 139              		.loc 1 75 5 is_stmt 1 view .LVU22
+ 140              	.LVL1:
+  76:Core/Src/main.c ****                          (3U << (5*2))  | (3U << (13*2)) | (3U << (15*2));
+  77:Core/Src/main.c **** 
+  78:Core/Src/main.c ****     uint32_t pins_out  = (1U << (1*2))  | (1U << (2*2))  | (1U << (4*2)) |
+ 141              		.loc 1 78 5 view .LVU23
+  79:Core/Src/main.c ****                          (1U << (5*2))  | (1U << (13*2)) | (1U << (15*2));
+  80:Core/Src/main.c **** 
+  81:Core/Src/main.c ****     GPIOB->MODER &= ~pins_mask;
+ 142              		.loc 1 81 5 view .LVU24
+ 143              		.loc 1 81 10 is_stmt 0 view .LVU25
+ 144 000a 0D4B     		ldr	r3, .L10+4
+ 145 000c 1A68     		ldr	r2, [r3]
+ 146              		.loc 1 81 18 view .LVU26
+ 147 000e 0D49     		ldr	r1, .L10+8
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 5
+
+
+ 148 0010 0A40     		ands	r2, r2, r1
+ 149 0012 1A60     		str	r2, [r3]
+  82:Core/Src/main.c ****     GPIOB->MODER |=  pins_out;
+ 150              		.loc 1 82 5 is_stmt 1 view .LVU27
+ 151              		.loc 1 82 10 is_stmt 0 view .LVU28
+ 152 0014 1868     		ldr	r0, [r3]
+ 153              		.loc 1 82 18 view .LVU29
+ 154 0016 0C4A     		ldr	r2, .L10+12
+ 155 0018 0243     		orrs	r2, r2, r0
+ 156 001a 1A60     		str	r2, [r3]
+  83:Core/Src/main.c ****     GPIOB->OSPEEDR &= ~pins_mask;
+ 157              		.loc 1 83 5 is_stmt 1 view .LVU30
+ 158              		.loc 1 83 10 is_stmt 0 view .LVU31
+ 159 001c 9A68     		ldr	r2, [r3, #8]
+ 160              		.loc 1 83 20 view .LVU32
+ 161 001e 0A40     		ands	r2, r2, r1
+ 162 0020 9A60     		str	r2, [r3, #8]
+  84:Core/Src/main.c **** 
+  85:Core/Src/main.c ****     OE_OFF();
+ 163              		.loc 1 85 5 is_stmt 1 view .LVU33
+ 164 0022 4FF40032 		mov	r2, #131072
+ 165 0026 9A61     		str	r2, [r3, #24]
+  86:Core/Src/main.c ****     PIN_LOW(PIN_LAT);
+ 166              		.loc 1 86 5 view .LVU34
+ 167 0028 4FF00052 		mov	r2, #536870912
+ 168 002c 9A61     		str	r2, [r3, #24]
+  87:Core/Src/main.c ****     PIN_LOW(PIN_CLK);
+ 169              		.loc 1 87 5 view .LVU35
+ 170 002e 4FF40012 		mov	r2, #2097152
+ 171 0032 9A61     		str	r2, [r3, #24]
+  88:Core/Src/main.c ****     PIN_LOW(PIN_R);
+ 172              		.loc 1 88 5 view .LVU36
+ 173 0034 4FF00042 		mov	r2, #-2147483648
+ 174 0038 9A61     		str	r2, [r3, #24]
+  89:Core/Src/main.c **** }
+ 175              		.loc 1 89 1 is_stmt 0 view .LVU37
+ 176 003a 7047     		bx	lr
+ 177              	.L11:
+ 178              		.align	2
+ 179              	.L10:
+ 180 003c 00380240 		.word	1073887232
+ 181 0040 00040240 		.word	1073873920
+ 182 0044 C3F0FF33 		.word	872411331
+ 183 0048 14050044 		.word	1140851988
+ 184              		.cfi_endproc
+ 185              	.LFE132:
+ 187              		.section	.text.p10_send_byte,"ax",%progbits
+ 188              		.align	1
+ 189              		.syntax unified
+ 190              		.thumb
+ 191              		.thumb_func
+ 193              	p10_send_byte:
+ 194              	.LVL2:
+ 195              	.LFB133:
+  90:Core/Src/main.c **** 
+  91:Core/Src/main.c **** static void p10_send_byte(uint8_t byte) {
+ 196              		.loc 1 91 41 is_stmt 1 view -0
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 6
+
+
+ 197              		.cfi_startproc
+ 198              		@ args = 0, pretend = 0, frame = 0
+ 199              		@ frame_needed = 0, uses_anonymous_args = 0
+ 200              		.loc 1 91 41 is_stmt 0 view .LVU39
+ 201 0000 70B5     		push	{r4, r5, r6, lr}
+ 202              	.LCFI4:
+ 203              		.cfi_def_cfa_offset 16
+ 204              		.cfi_offset 4, -16
+ 205              		.cfi_offset 5, -12
+ 206              		.cfi_offset 6, -8
+ 207              		.cfi_offset 14, -4
+ 208 0002 0646     		mov	r6, r0
+  92:Core/Src/main.c ****     for (int i = 7; i >= 0; i--) {
+ 209              		.loc 1 92 5 is_stmt 1 view .LVU40
+ 210              	.LBB3:
+ 211              		.loc 1 92 10 view .LVU41
+ 212              	.LVL3:
+ 213              		.loc 1 92 14 is_stmt 0 view .LVU42
+ 214 0004 0724     		movs	r4, #7
+ 215              		.loc 1 92 5 view .LVU43
+ 216 0006 10E0     		b	.L13
+ 217              	.LVL4:
+ 218              	.L14:
+  93:Core/Src/main.c ****         if (byte & (1U << i)) {
+  94:Core/Src/main.c ****             PIN_HIGH(PIN_R);
+  95:Core/Src/main.c ****         } else {
+  96:Core/Src/main.c ****             PIN_LOW(PIN_R);
+ 219              		.loc 1 96 13 is_stmt 1 view .LVU44
+ 220 0008 0E4B     		ldr	r3, .L19
+ 221 000a 4FF00042 		mov	r2, #-2147483648
+ 222 000e 9A61     		str	r2, [r3, #24]
+ 223              	.L15:
+  97:Core/Src/main.c ****         }
+  98:Core/Src/main.c ****         clk_delay();
+ 224              		.loc 1 98 9 view .LVU45
+ 225 0010 FFF7FEFF 		bl	clk_delay
+ 226              	.LVL5:
+  99:Core/Src/main.c **** 
+ 100:Core/Src/main.c ****         PIN_HIGH(PIN_CLK);
+ 227              		.loc 1 100 9 view .LVU46
+ 228 0014 0B4D     		ldr	r5, .L19
+ 229 0016 2023     		movs	r3, #32
+ 230 0018 AB61     		str	r3, [r5, #24]
+ 101:Core/Src/main.c ****         clk_delay();
+ 231              		.loc 1 101 9 view .LVU47
+ 232 001a FFF7FEFF 		bl	clk_delay
+ 233              	.LVL6:
+ 102:Core/Src/main.c ****         PIN_LOW(PIN_CLK);
+ 234              		.loc 1 102 9 view .LVU48
+ 235 001e 4FF40013 		mov	r3, #2097152
+ 236 0022 AB61     		str	r3, [r5, #24]
+ 103:Core/Src/main.c ****         clk_delay();
+ 237              		.loc 1 103 9 view .LVU49
+ 238 0024 FFF7FEFF 		bl	clk_delay
+ 239              	.LVL7:
+  92:Core/Src/main.c ****         if (byte & (1U << i)) {
+ 240              		.loc 1 92 30 discriminator 2 view .LVU50
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 7
+
+
+ 241 0028 013C     		subs	r4, r4, #1
+ 242              	.LVL8:
+ 243              	.L13:
+  92:Core/Src/main.c ****         if (byte & (1U << i)) {
+ 244              		.loc 1 92 23 discriminator 1 view .LVU51
+ 245 002a 002C     		cmp	r4, #0
+ 246 002c 09DB     		blt	.L18
+  93:Core/Src/main.c ****             PIN_HIGH(PIN_R);
+ 247              		.loc 1 93 9 view .LVU52
+  93:Core/Src/main.c ****             PIN_HIGH(PIN_R);
+ 248              		.loc 1 93 13 is_stmt 0 view .LVU53
+ 249 002e 26FA04F3 		lsr	r3, r6, r4
+  93:Core/Src/main.c ****             PIN_HIGH(PIN_R);
+ 250              		.loc 1 93 12 view .LVU54
+ 251 0032 13F0010F 		tst	r3, #1
+ 252 0036 E7D0     		beq	.L14
+  94:Core/Src/main.c ****         } else {
+ 253              		.loc 1 94 13 is_stmt 1 view .LVU55
+ 254 0038 024B     		ldr	r3, .L19
+ 255 003a 4FF40042 		mov	r2, #32768
+ 256 003e 9A61     		str	r2, [r3, #24]
+ 257 0040 E6E7     		b	.L15
+ 258              	.L18:
+  94:Core/Src/main.c ****         } else {
+ 259              		.loc 1 94 13 is_stmt 0 view .LVU56
+ 260              	.LBE3:
+ 104:Core/Src/main.c ****     }
+ 105:Core/Src/main.c **** }
+ 261              		.loc 1 105 1 view .LVU57
+ 262 0042 70BD     		pop	{r4, r5, r6, pc}
+ 263              	.LVL9:
+ 264              	.L20:
+ 265              		.loc 1 105 1 view .LVU58
+ 266              		.align	2
+ 267              	.L19:
+ 268 0044 00040240 		.word	1073873920
+ 269              		.cfi_endproc
+ 270              	.LFE133:
+ 272              		.section	.text.fill_screen,"ax",%progbits
+ 273              		.align	1
+ 274              		.syntax unified
+ 275              		.thumb
+ 276              		.thumb_func
+ 278              	fill_screen:
+ 279              	.LVL10:
+ 280              	.LFB135:
+ 106:Core/Src/main.c **** 
+ 107:Core/Src/main.c **** void p10_render_frame(void) {
+ 108:Core/Src/main.c ****     for (uint8_t row = 0; row < 4; row++) {
+ 109:Core/Src/main.c ****         OE_OFF();
+ 110:Core/Src/main.c **** 
+ 111:Core/Src/main.c ****         if (row & 1) PIN_HIGH(PIN_A); else PIN_LOW(PIN_A);
+ 112:Core/Src/main.c ****         if (row & 2) PIN_HIGH(PIN_B); else PIN_LOW(PIN_B);
+ 113:Core/Src/main.c **** 
+ 114:Core/Src/main.c ****         for (int i = 0; i < 16; i++) {
+ 115:Core/Src/main.c ****             p10_send_byte(frame_buffer[row][i]);
+ 116:Core/Src/main.c ****         }
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 8
+
+
+ 117:Core/Src/main.c **** 
+ 118:Core/Src/main.c ****         PIN_HIGH(PIN_LAT);
+ 119:Core/Src/main.c ****         clk_delay();
+ 120:Core/Src/main.c ****         PIN_LOW(PIN_LAT);
+ 121:Core/Src/main.c **** 
+ 122:Core/Src/main.c ****         OE_ON();
+ 123:Core/Src/main.c ****         delay_us(BRIGHTNESS_ON);
+ 124:Core/Src/main.c ****         OE_OFF();
+ 125:Core/Src/main.c ****         delay_us(BRIGHTNESS_OFF);
+ 126:Core/Src/main.c ****     }
+ 127:Core/Src/main.c **** }
+ 128:Core/Src/main.c **** 
+ 129:Core/Src/main.c **** static void fill_screen(uint8_t pattern) {
+ 281              		.loc 1 129 42 is_stmt 1 view -0
+ 282              		.cfi_startproc
+ 283              		@ args = 0, pretend = 0, frame = 0
+ 284              		@ frame_needed = 0, uses_anonymous_args = 0
+ 285              		@ link register save eliminated.
+ 130:Core/Src/main.c ****     for (int r = 0; r < 4; r++) {
+ 286              		.loc 1 130 5 view .LVU60
+ 287              	.LBB4:
+ 288              		.loc 1 130 10 view .LVU61
+ 289              		.loc 1 130 14 is_stmt 0 view .LVU62
+ 290 0000 0021     		movs	r1, #0
+ 291              		.loc 1 130 5 view .LVU63
+ 292 0002 07E0     		b	.L22
+ 293              	.LVL11:
+ 294              	.L23:
+ 295              	.LBB5:
+ 131:Core/Src/main.c ****         for (int c = 0; c < 16; c++) {
+ 132:Core/Src/main.c ****             frame_buffer[r][c] = pattern;
+ 296              		.loc 1 132 13 is_stmt 1 view .LVU64
+ 297              		.loc 1 132 32 is_stmt 0 view .LVU65
+ 298 0004 064A     		ldr	r2, .L27
+ 299 0006 02EB0112 		add	r2, r2, r1, lsl #4
+ 300 000a D054     		strb	r0, [r2, r3]
+ 131:Core/Src/main.c ****         for (int c = 0; c < 16; c++) {
+ 301              		.loc 1 131 34 is_stmt 1 discriminator 3 view .LVU66
+ 302 000c 0133     		adds	r3, r3, #1
+ 303              	.LVL12:
+ 304              	.L24:
+ 131:Core/Src/main.c ****         for (int c = 0; c < 16; c++) {
+ 305              		.loc 1 131 27 discriminator 1 view .LVU67
+ 306 000e 0F2B     		cmp	r3, #15
+ 307 0010 F8DD     		ble	.L23
+ 308              	.LBE5:
+ 130:Core/Src/main.c ****     for (int r = 0; r < 4; r++) {
+ 309              		.loc 1 130 29 discriminator 2 view .LVU68
+ 310 0012 0131     		adds	r1, r1, #1
+ 311              	.LVL13:
+ 312              	.L22:
+ 130:Core/Src/main.c ****     for (int r = 0; r < 4; r++) {
+ 313              		.loc 1 130 23 discriminator 1 view .LVU69
+ 314 0014 0329     		cmp	r1, #3
+ 315 0016 01DC     		bgt	.L26
+ 316              	.LBB6:
+ 131:Core/Src/main.c ****         for (int c = 0; c < 16; c++) {
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 9
+
+
+ 317              		.loc 1 131 18 is_stmt 0 view .LVU70
+ 318 0018 0023     		movs	r3, #0
+ 319 001a F8E7     		b	.L24
+ 320              	.L26:
+ 321              	.LBE6:
+ 322              	.LBE4:
+ 133:Core/Src/main.c ****         }
+ 134:Core/Src/main.c ****     }
+ 135:Core/Src/main.c **** }
+ 323              		.loc 1 135 1 view .LVU71
+ 324 001c 7047     		bx	lr
+ 325              	.L28:
+ 326 001e 00BF     		.align	2
+ 327              	.L27:
+ 328 0020 00000000 		.word	frame_buffer
+ 329              		.cfi_endproc
+ 330              	.LFE135:
+ 332              		.section	.text.set_pixel,"ax",%progbits
+ 333              		.align	1
+ 334              		.syntax unified
+ 335              		.thumb
+ 336              		.thumb_func
+ 338              	set_pixel:
+ 339              	.LVL14:
+ 340              	.LFB136:
+ 136:Core/Src/main.c **** 
+ 137:Core/Src/main.c **** static void set_pixel(int x, int y, uint8_t on) {
+ 341              		.loc 1 137 49 is_stmt 1 view -0
+ 342              		.cfi_startproc
+ 343              		@ args = 0, pretend = 0, frame = 0
+ 344              		@ frame_needed = 0, uses_anonymous_args = 0
+ 345              		@ link register save eliminated.
+ 138:Core/Src/main.c ****     if (x < 0 || x >= SCREEN_W || y < 0 || y >= SCREEN_H) return;
+ 346              		.loc 1 138 5 view .LVU73
+ 347              		.loc 1 138 8 is_stmt 0 view .LVU74
+ 348 0000 1F28     		cmp	r0, #31
+ 349 0002 22D8     		bhi	.L29
+ 350              		.loc 1 138 32 discriminator 2 view .LVU75
+ 351 0004 0029     		cmp	r1, #0
+ 352 0006 20DB     		blt	.L29
+ 353              		.loc 1 138 41 discriminator 4 view .LVU76
+ 354 0008 0F29     		cmp	r1, #15
+ 355 000a 1EDC     		bgt	.L29
+ 139:Core/Src/main.c **** 
+ 140:Core/Src/main.c ****     uint8_t scan = y & 3;
+ 356              		.loc 1 140 5 is_stmt 1 view .LVU77
+ 357              		.loc 1 140 13 is_stmt 0 view .LVU78
+ 358 000c 01F0030C 		and	ip, r1, #3
+ 359              	.LVL15:
+ 141:Core/Src/main.c ****     uint8_t idx  = (x >> 3) * 4 + (3 - (y >> 2));
+ 360              		.loc 1 141 5 is_stmt 1 view .LVU79
+ 361              		.loc 1 141 23 is_stmt 0 view .LVU80
+ 362 0010 C310     		asrs	r3, r0, #3
+ 363              		.loc 1 141 33 view .LVU81
+ 364 0012 9B00     		lsls	r3, r3, #2
+ 365 0014 A3EBA103 		sub	r3, r3, r1, asr #2
+ 366 0018 DBB2     		uxtb	r3, r3
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 10
+
+
+ 367              		.loc 1 141 13 view .LVU82
+ 368 001a 0333     		adds	r3, r3, #3
+ 369 001c DBB2     		uxtb	r3, r3
+ 370              	.LVL16:
+ 142:Core/Src/main.c ****     uint8_t mask = 1U << (7 - (x & 7));
+ 371              		.loc 1 142 5 is_stmt 1 view .LVU83
+ 372              		.loc 1 142 29 is_stmt 0 view .LVU84
+ 373 001e C043     		mvns	r0, r0
+ 374              	.LVL17:
+ 375              		.loc 1 142 29 view .LVU85
+ 376 0020 00F00700 		and	r0, r0, #7
+ 377              	.LVL18:
+ 378              		.loc 1 142 23 view .LVU86
+ 379 0024 0121     		movs	r1, #1
+ 380              	.LVL19:
+ 381              		.loc 1 142 23 view .LVU87
+ 382 0026 8140     		lsls	r1, r1, r0
+ 383              		.loc 1 142 13 view .LVU88
+ 384 0028 C8B2     		uxtb	r0, r1
+ 385              	.LVL20:
+ 143:Core/Src/main.c **** 
+ 144:Core/Src/main.c ****     if (on) frame_buffer[scan][idx] &= ~mask;
+ 386              		.loc 1 144 5 is_stmt 1 view .LVU89
+ 387              		.loc 1 144 8 is_stmt 0 view .LVU90
+ 388 002a 42B1     		cbz	r2, .L31
+ 389              		.loc 1 144 13 is_stmt 1 discriminator 1 view .LVU91
+ 390              		.loc 1 144 31 is_stmt 0 discriminator 1 view .LVU92
+ 391 002c 074A     		ldr	r2, .L32
+ 392              	.LVL21:
+ 393              		.loc 1 144 31 discriminator 1 view .LVU93
+ 394 002e 02EB0C12 		add	r2, r2, ip, lsl #4
+ 395 0032 D05C     		ldrb	r0, [r2, r3]	@ zero_extendqisi2
+ 396              	.LVL22:
+ 397              		.loc 1 144 37 discriminator 1 view .LVU94
+ 398 0034 C943     		mvns	r1, r1
+ 399              	.LVL23:
+ 400              		.loc 1 144 37 discriminator 1 view .LVU95
+ 401 0036 49B2     		sxtb	r1, r1
+ 402              	.LVL24:
+ 403              		.loc 1 144 37 discriminator 1 view .LVU96
+ 404 0038 0140     		ands	r1, r1, r0
+ 405 003a D154     		strb	r1, [r2, r3]
+ 406 003c 7047     		bx	lr
+ 407              	.LVL25:
+ 408              	.L31:
+ 145:Core/Src/main.c ****     else    frame_buffer[scan][idx] |=  mask;
+ 409              		.loc 1 145 13 is_stmt 1 view .LVU97
+ 410              		.loc 1 145 31 is_stmt 0 view .LVU98
+ 411 003e 034A     		ldr	r2, .L32
+ 412              	.LVL26:
+ 413              		.loc 1 145 31 view .LVU99
+ 414 0040 02EB0C12 		add	r2, r2, ip, lsl #4
+ 415 0044 D15C     		ldrb	r1, [r2, r3]	@ zero_extendqisi2
+ 416              		.loc 1 145 37 view .LVU100
+ 417 0046 0143     		orrs	r1, r1, r0
+ 418 0048 D154     		strb	r1, [r2, r3]
+ 419              	.LVL27:
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 11
+
+
+ 420              	.L29:
+ 146:Core/Src/main.c **** }
+ 421              		.loc 1 146 1 view .LVU101
+ 422 004a 7047     		bx	lr
+ 423              	.L33:
+ 424              		.align	2
+ 425              	.L32:
+ 426 004c 00000000 		.word	frame_buffer
+ 427              		.cfi_endproc
+ 428              	.LFE136:
+ 430              		.section	.text.draw_art,"ax",%progbits
+ 431              		.align	1
+ 432              		.syntax unified
+ 433              		.thumb
+ 434              		.thumb_func
+ 436              	draw_art:
+ 437              	.LFB137:
+ 147:Core/Src/main.c **** 
+ 148:Core/Src/main.c **** /* Растровая маска 32x16 */
+ 149:Core/Src/main.c **** static const uint32_t art[16] = {
+ 150:Core/Src/main.c ****     0b00000000000000000000000000000000,
+ 151:Core/Src/main.c ****     0b00001110000000000000000000000000,
+ 152:Core/Src/main.c ****     0b00011111000000000000000000000000,
+ 153:Core/Src/main.c ****     0b00111111100000000000000000000000,
+ 154:Core/Src/main.c ****     0b00111111110000000000000000000000,
+ 155:Core/Src/main.c ****     0b00111111111111111111110111000000,
+ 156:Core/Src/main.c ****     0b00011111111111111111111111100000,
+ 157:Core/Src/main.c ****     0b00001111111111111111111111110000,
+ 158:Core/Src/main.c ****     0b00001111111111111111111111110000,
+ 159:Core/Src/main.c ****     0b00011111111111111111111111100000,
+ 160:Core/Src/main.c ****     0b00111111111111111111110111000000,
+ 161:Core/Src/main.c ****     0b00111111110000000000000000000000,
+ 162:Core/Src/main.c ****     0b00111111100000000000000000000000,
+ 163:Core/Src/main.c ****     0b00011111000000000000000000000000,
+ 164:Core/Src/main.c ****     0b00001110000000000000000000000000,
+ 165:Core/Src/main.c ****     0b00000000000000000000000000000000
+ 166:Core/Src/main.c **** };
+ 167:Core/Src/main.c **** 
+ 168:Core/Src/main.c **** static void draw_art(void) {
+ 438              		.loc 1 168 28 is_stmt 1 view -0
+ 439              		.cfi_startproc
+ 440              		@ args = 0, pretend = 0, frame = 0
+ 441              		@ frame_needed = 0, uses_anonymous_args = 0
+ 442 0000 38B5     		push	{r3, r4, r5, lr}
+ 443              	.LCFI5:
+ 444              		.cfi_def_cfa_offset 16
+ 445              		.cfi_offset 3, -16
+ 446              		.cfi_offset 4, -12
+ 447              		.cfi_offset 5, -8
+ 448              		.cfi_offset 14, -4
+ 169:Core/Src/main.c ****     for (int y = 0; y < 16; y++) {
+ 449              		.loc 1 169 5 view .LVU103
+ 450              	.LBB7:
+ 451              		.loc 1 169 10 view .LVU104
+ 452              	.LVL28:
+ 453              		.loc 1 169 14 is_stmt 0 view .LVU105
+ 454 0002 0025     		movs	r5, #0
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 12
+
+
+ 455              		.loc 1 169 5 view .LVU106
+ 456 0004 0FE0     		b	.L35
+ 457              	.LVL29:
+ 458              	.L36:
+ 459              	.LBB8:
+ 460              	.LBB9:
+ 170:Core/Src/main.c ****         for (int x = 0; x < 32; x++) {
+ 171:Core/Src/main.c ****             uint8_t on = (art[y] >> (31 - x)) & 1;
+ 461              		.loc 1 171 13 is_stmt 1 view .LVU107
+ 462              		.loc 1 171 30 is_stmt 0 view .LVU108
+ 463 0006 0A4B     		ldr	r3, .L41
+ 464 0008 53F82520 		ldr	r2, [r3, r5, lsl #2]
+ 465              		.loc 1 171 41 view .LVU109
+ 466 000c C4F11F03 		rsb	r3, r4, #31
+ 467              		.loc 1 171 34 view .LVU110
+ 468 0010 DA40     		lsrs	r2, r2, r3
+ 469              	.LVL30:
+ 172:Core/Src/main.c ****             set_pixel(x, y, on);
+ 470              		.loc 1 172 13 is_stmt 1 view .LVU111
+ 471 0012 02F00102 		and	r2, r2, #1
+ 472              	.LVL31:
+ 473              		.loc 1 172 13 is_stmt 0 view .LVU112
+ 474 0016 2946     		mov	r1, r5
+ 475 0018 2046     		mov	r0, r4
+ 476 001a FFF7FEFF 		bl	set_pixel
+ 477              	.LVL32:
+ 478              		.loc 1 172 13 view .LVU113
+ 479              	.LBE9:
+ 170:Core/Src/main.c ****         for (int x = 0; x < 32; x++) {
+ 480              		.loc 1 170 34 is_stmt 1 discriminator 3 view .LVU114
+ 481 001e 0134     		adds	r4, r4, #1
+ 482              	.LVL33:
+ 483              	.L37:
+ 170:Core/Src/main.c ****         for (int x = 0; x < 32; x++) {
+ 484              		.loc 1 170 27 discriminator 1 view .LVU115
+ 485 0020 1F2C     		cmp	r4, #31
+ 486 0022 F0DD     		ble	.L36
+ 487              	.LBE8:
+ 169:Core/Src/main.c ****     for (int y = 0; y < 16; y++) {
+ 488              		.loc 1 169 30 discriminator 2 view .LVU116
+ 489 0024 0135     		adds	r5, r5, #1
+ 490              	.LVL34:
+ 491              	.L35:
+ 169:Core/Src/main.c ****     for (int y = 0; y < 16; y++) {
+ 492              		.loc 1 169 23 discriminator 1 view .LVU117
+ 493 0026 0F2D     		cmp	r5, #15
+ 494 0028 01DC     		bgt	.L40
+ 495              	.LBB10:
+ 170:Core/Src/main.c ****         for (int x = 0; x < 32; x++) {
+ 496              		.loc 1 170 18 is_stmt 0 view .LVU118
+ 497 002a 0024     		movs	r4, #0
+ 498 002c F8E7     		b	.L37
+ 499              	.L40:
+ 500              	.LBE10:
+ 501              	.LBE7:
+ 173:Core/Src/main.c ****         }
+ 174:Core/Src/main.c ****     }
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 13
+
+
+ 175:Core/Src/main.c **** }
+ 502              		.loc 1 175 1 view .LVU119
+ 503 002e 38BD     		pop	{r3, r4, r5, pc}
+ 504              	.LVL35:
+ 505              	.L42:
+ 506              		.loc 1 175 1 view .LVU120
+ 507              		.align	2
+ 508              	.L41:
+ 509 0030 00000000 		.word	art
+ 510              		.cfi_endproc
+ 511              	.LFE137:
+ 513              		.section	.text.p10_render_frame,"ax",%progbits
+ 514              		.align	1
+ 515              		.global	p10_render_frame
+ 516              		.syntax unified
+ 517              		.thumb
+ 518              		.thumb_func
+ 520              	p10_render_frame:
+ 521              	.LFB134:
+ 107:Core/Src/main.c ****     for (uint8_t row = 0; row < 4; row++) {
+ 522              		.loc 1 107 29 is_stmt 1 view -0
+ 523              		.cfi_startproc
+ 524              		@ args = 0, pretend = 0, frame = 0
+ 525              		@ frame_needed = 0, uses_anonymous_args = 0
+ 526 0000 38B5     		push	{r3, r4, r5, lr}
+ 527              	.LCFI6:
+ 528              		.cfi_def_cfa_offset 16
+ 529              		.cfi_offset 3, -16
+ 530              		.cfi_offset 4, -12
+ 531              		.cfi_offset 5, -8
+ 532              		.cfi_offset 14, -4
+ 108:Core/Src/main.c ****         OE_OFF();
+ 533              		.loc 1 108 5 view .LVU122
+ 534              	.LBB11:
+ 108:Core/Src/main.c ****         OE_OFF();
+ 535              		.loc 1 108 10 view .LVU123
+ 536              	.LVL36:
+ 108:Core/Src/main.c ****         OE_OFF();
+ 537              		.loc 1 108 18 is_stmt 0 view .LVU124
+ 538 0002 0025     		movs	r5, #0
+ 108:Core/Src/main.c ****         OE_OFF();
+ 539              		.loc 1 108 5 view .LVU125
+ 540 0004 28E0     		b	.L44
+ 541              	.LVL37:
+ 542              	.L45:
+ 111:Core/Src/main.c ****         if (row & 2) PIN_HIGH(PIN_B); else PIN_LOW(PIN_B);
+ 543              		.loc 1 111 44 is_stmt 1 discriminator 2 view .LVU126
+ 544 0006 1E4B     		ldr	r3, .L54
+ 545 0008 4FF48022 		mov	r2, #262144
+ 546 000c 9A61     		str	r2, [r3, #24]
+ 547 000e 2EE0     		b	.L46
+ 548              	.L47:
+ 112:Core/Src/main.c **** 
+ 549              		.loc 1 112 44 discriminator 2 view .LVU127
+ 550 0010 1B4B     		ldr	r3, .L54
+ 551 0012 4FF48012 		mov	r2, #1048576
+ 552 0016 9A61     		str	r2, [r3, #24]
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 14
+
+
+ 553 0018 2FE0     		b	.L48
+ 554              	.LVL38:
+ 555              	.L50:
+ 556              	.LBB12:
+ 115:Core/Src/main.c ****         }
+ 557              		.loc 1 115 13 view .LVU128
+ 558 001a 1A4B     		ldr	r3, .L54+4
+ 559 001c 03EB0513 		add	r3, r3, r5, lsl #4
+ 560 0020 185D     		ldrb	r0, [r3, r4]	@ zero_extendqisi2
+ 561 0022 FFF7FEFF 		bl	p10_send_byte
+ 562              	.LVL39:
+ 114:Core/Src/main.c ****             p10_send_byte(frame_buffer[row][i]);
+ 563              		.loc 1 114 34 discriminator 3 view .LVU129
+ 564 0026 0134     		adds	r4, r4, #1
+ 565              	.LVL40:
+ 566              	.L49:
+ 114:Core/Src/main.c ****             p10_send_byte(frame_buffer[row][i]);
+ 567              		.loc 1 114 27 discriminator 1 view .LVU130
+ 568 0028 0F2C     		cmp	r4, #15
+ 569 002a F6DD     		ble	.L50
+ 570              	.LBE12:
+ 118:Core/Src/main.c ****         clk_delay();
+ 571              		.loc 1 118 9 view .LVU131
+ 572 002c 144C     		ldr	r4, .L54
+ 573              	.LVL41:
+ 118:Core/Src/main.c ****         clk_delay();
+ 574              		.loc 1 118 9 is_stmt 0 view .LVU132
+ 575 002e 4FF40053 		mov	r3, #8192
+ 576 0032 A361     		str	r3, [r4, #24]
+ 119:Core/Src/main.c ****         PIN_LOW(PIN_LAT);
+ 577              		.loc 1 119 9 is_stmt 1 view .LVU133
+ 578 0034 FFF7FEFF 		bl	clk_delay
+ 579              	.LVL42:
+ 120:Core/Src/main.c **** 
+ 580              		.loc 1 120 9 view .LVU134
+ 581 0038 4FF00053 		mov	r3, #536870912
+ 582 003c A361     		str	r3, [r4, #24]
+ 122:Core/Src/main.c ****         delay_us(BRIGHTNESS_ON);
+ 583              		.loc 1 122 9 view .LVU135
+ 584 003e 0223     		movs	r3, #2
+ 585 0040 A361     		str	r3, [r4, #24]
+ 123:Core/Src/main.c ****         OE_OFF();
+ 586              		.loc 1 123 9 view .LVU136
+ 587 0042 6420     		movs	r0, #100
+ 588 0044 FFF7FEFF 		bl	delay_us
+ 589              	.LVL43:
+ 124:Core/Src/main.c ****         delay_us(BRIGHTNESS_OFF);
+ 590              		.loc 1 124 9 view .LVU137
+ 591 0048 4FF40033 		mov	r3, #131072
+ 592 004c A361     		str	r3, [r4, #24]
+ 125:Core/Src/main.c ****     }
+ 593              		.loc 1 125 9 view .LVU138
+ 594 004e 6420     		movs	r0, #100
+ 595 0050 FFF7FEFF 		bl	delay_us
+ 596              	.LVL44:
+ 108:Core/Src/main.c ****         OE_OFF();
+ 597              		.loc 1 108 39 discriminator 2 view .LVU139
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 15
+
+
+ 598 0054 0135     		adds	r5, r5, #1
+ 599              	.LVL45:
+ 108:Core/Src/main.c ****         OE_OFF();
+ 600              		.loc 1 108 39 is_stmt 0 discriminator 2 view .LVU140
+ 601 0056 EDB2     		uxtb	r5, r5
+ 602              	.LVL46:
+ 603              	.L44:
+ 108:Core/Src/main.c ****         OE_OFF();
+ 604              		.loc 1 108 31 is_stmt 1 discriminator 1 view .LVU141
+ 605 0058 032D     		cmp	r5, #3
+ 606 005a 10D8     		bhi	.L53
+ 109:Core/Src/main.c **** 
+ 607              		.loc 1 109 9 view .LVU142
+ 608 005c 084B     		ldr	r3, .L54
+ 609 005e 4FF40032 		mov	r2, #131072
+ 610 0062 9A61     		str	r2, [r3, #24]
+ 111:Core/Src/main.c ****         if (row & 2) PIN_HIGH(PIN_B); else PIN_LOW(PIN_B);
+ 611              		.loc 1 111 9 view .LVU143
+ 111:Core/Src/main.c ****         if (row & 2) PIN_HIGH(PIN_B); else PIN_LOW(PIN_B);
+ 612              		.loc 1 111 12 is_stmt 0 view .LVU144
+ 613 0064 15F0010F 		tst	r5, #1
+ 614 0068 CDD0     		beq	.L45
+ 111:Core/Src/main.c ****         if (row & 2) PIN_HIGH(PIN_B); else PIN_LOW(PIN_B);
+ 615              		.loc 1 111 22 is_stmt 1 discriminator 1 view .LVU145
+ 616 006a 0422     		movs	r2, #4
+ 617 006c 9A61     		str	r2, [r3, #24]
+ 618              	.L46:
+ 112:Core/Src/main.c **** 
+ 619              		.loc 1 112 9 view .LVU146
+ 112:Core/Src/main.c **** 
+ 620              		.loc 1 112 12 is_stmt 0 view .LVU147
+ 621 006e 15F0020F 		tst	r5, #2
+ 622 0072 CDD0     		beq	.L47
+ 112:Core/Src/main.c **** 
+ 623              		.loc 1 112 22 is_stmt 1 discriminator 1 view .LVU148
+ 624 0074 024B     		ldr	r3, .L54
+ 625 0076 1022     		movs	r2, #16
+ 626 0078 9A61     		str	r2, [r3, #24]
+ 627              	.L48:
+ 628              	.LBE11:
+ 107:Core/Src/main.c ****     for (uint8_t row = 0; row < 4; row++) {
+ 629              		.loc 1 107 29 is_stmt 0 view .LVU149
+ 630 007a 0024     		movs	r4, #0
+ 631 007c D4E7     		b	.L49
+ 632              	.L53:
+ 127:Core/Src/main.c **** 
+ 633              		.loc 1 127 1 view .LVU150
+ 634 007e 38BD     		pop	{r3, r4, r5, pc}
+ 635              	.LVL47:
+ 636              	.L55:
+ 127:Core/Src/main.c **** 
+ 637              		.loc 1 127 1 view .LVU151
+ 638              		.align	2
+ 639              	.L54:
+ 640 0080 00040240 		.word	1073873920
+ 641 0084 00000000 		.word	frame_buffer
+ 642              		.cfi_endproc
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 16
+
+
+ 643              	.LFE134:
+ 645              		.section	.text.main,"ax",%progbits
+ 646              		.align	1
+ 647              		.global	main
+ 648              		.syntax unified
+ 649              		.thumb
+ 650              		.thumb_func
+ 652              	main:
+ 653              	.LFB138:
+ 176:Core/Src/main.c **** 
+ 177:Core/Src/main.c **** int main(void) {
+ 654              		.loc 1 177 16 is_stmt 1 view -0
+ 655              		.cfi_startproc
+ 656              		@ Volatile: function does not return.
+ 657              		@ args = 0, pretend = 0, frame = 0
+ 658              		@ frame_needed = 0, uses_anonymous_args = 0
+ 659 0000 08B5     		push	{r3, lr}
+ 660              	.LCFI7:
+ 661              		.cfi_def_cfa_offset 8
+ 662              		.cfi_offset 3, -8
+ 663              		.cfi_offset 14, -4
+ 178:Core/Src/main.c ****     p10_gpio_init();
+ 664              		.loc 1 178 5 view .LVU153
+ 665 0002 FFF7FEFF 		bl	p10_gpio_init
+ 666              	.LVL48:
+ 179:Core/Src/main.c **** 
+ 180:Core/Src/main.c ****     fill_screen(PIX_OFF);
+ 667              		.loc 1 180 5 view .LVU154
+ 668 0006 FF20     		movs	r0, #255
+ 669 0008 FFF7FEFF 		bl	fill_screen
+ 670              	.LVL49:
+ 181:Core/Src/main.c ****     draw_art();
+ 671              		.loc 1 181 5 view .LVU155
+ 672 000c FFF7FEFF 		bl	draw_art
+ 673              	.LVL50:
+ 674              	.L57:
+ 182:Core/Src/main.c **** 
+ 183:Core/Src/main.c ****     while (1) {
+ 675              		.loc 1 183 5 view .LVU156
+ 184:Core/Src/main.c ****         p10_render_frame();
+ 676              		.loc 1 184 9 discriminator 1 view .LVU157
+ 677 0010 FFF7FEFF 		bl	p10_render_frame
+ 678              	.LVL51:
+ 183:Core/Src/main.c ****         p10_render_frame();
+ 679              		.loc 1 183 11 view .LVU158
+ 680 0014 FCE7     		b	.L57
+ 681              		.cfi_endproc
+ 682              	.LFE138:
+ 684              		.section	.rodata.art,"a"
+ 685              		.align	2
+ 688              	art:
+ 689 0000 00000000 		.word	0
+ 690 0004 0000000E 		.word	234881024
+ 691 0008 0000001F 		.word	520093696
+ 692 000c 0000803F 		.word	1065353216
+ 693 0010 0000C03F 		.word	1069547520
+ 694 0014 C0FDFF3F 		.word	1073741248
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 17
+
+
+ 695 0018 E0FFFF1F 		.word	536870880
+ 696 001c F0FFFF0F 		.word	268435440
+ 697 0020 F0FFFF0F 		.word	268435440
+ 698 0024 E0FFFF1F 		.word	536870880
+ 699 0028 C0FDFF3F 		.word	1073741248
+ 700 002c 0000C03F 		.word	1069547520
+ 701 0030 0000803F 		.word	1065353216
+ 702 0034 0000001F 		.word	520093696
+ 703 0038 0000000E 		.word	234881024
+ 704 003c 00000000 		.word	0
+ 705              		.global	frame_buffer
+ 706              		.section	.bss.frame_buffer,"aw",%nobits
+ 707              		.align	2
+ 710              	frame_buffer:
+ 711 0000 00000000 		.space	64
+ 711      00000000 
+ 711      00000000 
+ 711      00000000 
+ 711      00000000 
+ 712              		.text
+ 713              	.Letext0:
+ 714              		.file 2 "C:/Users/Huawei/Desktop/Uni_study/STM/Tools/GCC/xpack-arm-none-eabi-gcc-13.2.1-1.1/arm-no
+ 715              		.file 3 "C:/Users/Huawei/Desktop/Uni_study/STM/Tools/GCC/xpack-arm-none-eabi-gcc-13.2.1-1.1/arm-no
+ 716              		.file 4 "CMSIS/Devices/STM32F4xx/Inc/STM32F446xx/stm32f446xx.h"
+ARM GAS  C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s 			page 18
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:21     .text.clk_delay:00000000 $t
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:26     .text.clk_delay:00000000 clk_delay
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:72     .text.delay_us:00000000 $t
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:77     .text.delay_us:00000000 delay_us
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:120    .text.p10_gpio_init:00000000 $t
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:125    .text.p10_gpio_init:00000000 p10_gpio_init
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:180    .text.p10_gpio_init:0000003c $d
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:188    .text.p10_send_byte:00000000 $t
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:193    .text.p10_send_byte:00000000 p10_send_byte
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:268    .text.p10_send_byte:00000044 $d
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:273    .text.fill_screen:00000000 $t
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:278    .text.fill_screen:00000000 fill_screen
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:328    .text.fill_screen:00000020 $d
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:710    .bss.frame_buffer:00000000 frame_buffer
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:333    .text.set_pixel:00000000 $t
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:338    .text.set_pixel:00000000 set_pixel
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:426    .text.set_pixel:0000004c $d
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:431    .text.draw_art:00000000 $t
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:436    .text.draw_art:00000000 draw_art
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:509    .text.draw_art:00000030 $d
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:688    .rodata.art:00000000 art
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:514    .text.p10_render_frame:00000000 $t
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:520    .text.p10_render_frame:00000000 p10_render_frame
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:640    .text.p10_render_frame:00000080 $d
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:646    .text.main:00000000 $t
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:652    .text.main:00000000 main
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:685    .rodata.art:00000000 $d
+C:\Users\Huawei\AppData\Local\Temp\cc2lKa41.s:707    .bss.frame_buffer:00000000 $d
+
+NO UNDEFINED SYMBOLS

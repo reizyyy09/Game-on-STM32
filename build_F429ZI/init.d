@@ -1,0 +1,2 @@
+build_F429ZI/init.o: Core/Src/init.c Core/Inc/init.h
+Core/Inc/init.h:
